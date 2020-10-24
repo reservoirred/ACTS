@@ -11,6 +11,7 @@ OTSU_transforms takes in 16-bit .tif files and coverts them to 16-bit .png files
 
 "data_set_folder" variable should be the same across each script. 
 The data_set_folder be a directory which contains the following labled directories:
+  
   -"Raw" - contains directories , each title after a specimen name, which contain the .tiff images from the XCT scan
   -"Labels" -contains directories , each title after a specimen name, which contain .png
 
