@@ -5,4 +5,11 @@ The link to the paper I, and gratefully others, have published is provided. The 
 The code provided in this repository is free to use under condition that you cite the given article. 
 The code provided allows for OTSU tranform of image stacks, training your own ACTS network on a data set, and using ACTS to segment other data.  A pre-trained ACTS neural network can be provided if asked. 
 
- 
+** Importance on file structure
+
+OTSU_transforms takes in 16-bit .tif files and coverts them to 16-bit .png files
+
+
+
+
+
