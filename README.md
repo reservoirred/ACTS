@@ -5,11 +5,12 @@ The link to the paper I, and gratefully others, have published is provided. The 
 The code provided in this repository is free to use under condition that you cite the given article. 
 The code provided allows for OTSU tranform of image stacks, training your own ACTS network on a data set, and using ACTS to segment other data.  A pre-trained ACTS neural network can be provided if asked. 
 
-** Importance on file structure
-
+** Importance on file type
 OTSU_transforms takes in 16-bit .tif files and coverts them to 16-bit .png files
 *raw images and label files should have the exact same file name if training
 "data_set_folder" variable should be the same across each script. 
+
+
 The data_set_folder be a directory which contains the following labled directories, the first should be created by the user:
   
   -"Raw" - contains directories , each titled after a specimen name, which contain the .tif images from the XCT scan
