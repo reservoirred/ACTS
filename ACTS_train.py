@@ -1,22 +1,20 @@
 import numpy as np
 import scipy.misc
 import random
-from random import shuffle
 import os
 import cv2
 import numpngw
+import keras.callbacks
+
+from random import shuffle
 from tqdm import tqdm
 from keras.models import Model,load_model
 from keras.layers import Conv2D, UpSampling2D, AveragePooling2D, BatchNormalization, LeakyReLU,Add,Activation,core, Input,concatenate
 from keras.utils.generic_utils import get_custom_objects
 from keras import backend as K
 from keras.callbacks import ReduceLROnPlateau
-from skimage.io import imread
 from keras import optimizers
-from keras.utils import np_utils
-import keras.callbacks
 from keras import regularizers
-import matplotlib.pyplot as plt
 from keras.callbacks import ReduceLROnPlateau, ModelCheckpoint, EarlyStopping
 from sklearn.metrics import classification_report, confusion_matrix
 
@@ -31,19 +29,24 @@ if gpus:
     except RuntimeError as e:
         print(e)
 
+## ------------------------Inputs-----------------------------------##
+data_set_folder = 'C:\\Users\\Christian\\Desktop\\Projects\\PublishACTSCodeData\\ARL_DataSet\\'
 ## inputs ##
 img_width, img_height, img_channels = 256,256, 1
 batch_size = 25
-epochs = 2
+epochs = 200
 RegTerm = 0.001
 valid_per = .2
-
-data_set_folder = 'C:\\Users\\Christian\\Desktop\\Projects\\PublishACTSCodeData\\ARL_DataSet\\'
-##--------------------------------------------------------------------------------##
+##--------------------------Directories------------------------------------##
 images_folder = data_set_folder+'Images\\'
 labels_folder = data_set_folder+'Labels\\'
 training_results_folder = data_set_folder+'Training_results\\'
-sample_list = [os.path.join(path, name)[len(images_folder):] for path, subdirs, files in os.walk(images_folder) for name in files]
+try:
+	os.mkdir(training_results_folder)
+except:
+	print('')
+
+##-------------------------function list------------------------------------##
 
 def get_sample(sample_name,aug):
     img = np.expand_dims(np.array(cv2.imread(images_folder+sample_name,-1),dtype='float32')/2**16,axis=-1);
@@ -165,7 +168,7 @@ def upsample(input_layer):
     CL_1 = UpSampling2D(size=(2,2))(input_layer)
     return CL_1
 
-## ------------------------ Build Network--------------------##
+## ---------------------------------------- Build Network----------------------------------------##
 Image_input = Input(shape = (img_width, img_height,  img_channels)) 
 
 Encode_Stage_1_1 = convf(Image_input,6)
@@ -199,18 +202,18 @@ network.save(training_results_folder+'Initialized.h5')
 network.save_weights(training_results_folder+'Initialized_weights.h5')
 
 ## --------------------------------- Train Network --------------------------------------##
+sample_list = [os.path.join(path, name)[len(images_folder):] for path, subdirs, files in os.walk(images_folder) for name in files]
 
 indexes_valid = random.sample(range(0,len(sample_list)),int(valid_per*float(len(sample_list))))
 indexes_train = [x for x in range(0,len(sample_list)) if x not in indexes_valid]
 training_list = [x for ind,x in enumerate(sample_list) if ind in indexes_train]
 valid_list = [x for ind,x in enumerate(sample_list) if ind in indexes_valid]
 
-batch_size = 25 
 num_batch_calls = (int(float(len(training_list)+1)/float(batch_size)))
 valid_batch_calls = (int(float(len(valid_list)+1)/float(batch_size))-1)
-epochs = 2
 
 history_call = LossHistory()
+
 val_stop_call = EarlyStopping(monitor='val_loss',min_delta=0,patience=10,verbose=1,mode='auto', restore_best_weights=True)
 reduce_lr_call = ReduceLROnPlateau(monitor='val_loss', factor=0.1,patience=5, min_lr=.000002)
 
@@ -226,5 +229,20 @@ np.savetxt(training_results_folder+'TrainMCC.txt',history_call.metric)
 np.savetxt(training_results_folder+'ValLoss.txt',traininghistory.history['val_loss'])
 np.savetxt(training_results_folder+'ValMCC.txt',traininghistory.history['val_MCC'])
 
+##---------------------------------------Classification report------------------------------##
+print('Calculating stats on validation set')
+i_pred = []
+i_true = []
+for i in tqdm(range(len(valid_list))):
+    img,lbl = get_sample(valid_list[i],False)
+    pred = network.predict_on_batch(np.expand_dims(img,axis=0))
 
+    i_true.extend(np.argmax(lbl[:,:,0:2],axis=-1).flatten())
+    i_pred.extend(np.argmax(pred,axis=-1).flatten())
 
+print('Saving report')
+report = classification_report(i_true,i_pred,target_names=['Part','Pore'])
+print(report)
+f = open(training_results_folder+'ClassificationReport.txt','w')
+print(report, file=f)
+f.close() 
